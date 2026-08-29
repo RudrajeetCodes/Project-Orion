@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from database.models.task import Task
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,8 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def create_task(
     session: AsyncSession,
     title: str,
+    priority: str = "normal",
+    due_at: datetime | None = None,
 ) -> Task:
-    task = Task(title=title)
+    task = Task(
+        title=title,
+        priority=priority,
+        due_at=due_at,
+    )
 
     session.add(task)
     await session.commit()

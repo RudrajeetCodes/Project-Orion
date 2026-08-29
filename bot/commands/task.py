@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import discord
 from database.session import SessionLocal
 from discord import app_commands
@@ -21,14 +23,43 @@ class TaskGroup(app_commands.Group):
         name="add",
         description="Add a new task",
     )
-    @app_commands.describe(title="The task you want to add")
+    @app_commands.describe(
+        title="The task you want to add",
+        priority="Task priority",
+        due="Due date: YYYY-MM-DD HH:MM",
+    )
+    @app_commands.choices(
+        priority=[
+            app_commands.Choice(name="Low", value="low"),
+            app_commands.Choice(name="Normal", value="normal"),
+            app_commands.Choice(name="High", value="high"),
+        ]
+    )
     async def add(
         self,
         interaction: discord.Interaction,
         title: str,
+        priority: app_commands.Choice[str],
+        due: str | None = None,
     ):
+        due_at = None
+
+        if due:
+            try:
+                due_at = datetime.strptime(due, "%Y-%m-%d %H:%M")
+            except ValueError:
+                await interaction.response.send_message(
+                    "❌ Invalid date format. Use `YYYY-MM-DD HH:MM`."
+                )
+                return
+
         async with SessionLocal() as session:
-            task = await create_task(session, title)
+            task = await create_task(
+                session,
+                title,
+                priority.value,
+                due_at,
+            )
 
         await interaction.response.send_message(
             f"✅ Task #{task.id} created: **{task.title}**"
@@ -49,7 +80,14 @@ class TaskGroup(app_commands.Group):
         lines = ["📋 **Your Tasks**", ""]
 
         for task in tasks:
-            lines.append(f"{task.id}. ⬜ {task.title}")
+            priority = task.priority.capitalize()
+
+            if task.due_at:
+                due = task.due_at.strftime("%b %d at %I:%M %p")
+            else:
+                due = "No due date"
+
+            lines.append(f"{task.id}. ⬜ **{task.title}**\n   {priority} · {due}")
 
         await interaction.response.send_message("\n".join(lines))
 

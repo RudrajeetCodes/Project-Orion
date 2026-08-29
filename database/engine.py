@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from database.models.task import Base
+
 DATABASE_URL = "sqlite+aiosqlite:///orion.db"
 
 engine: AsyncEngine = create_async_engine(

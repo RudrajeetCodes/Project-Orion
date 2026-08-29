@@ -2,6 +2,14 @@
 name = "orion"
 version = "0.1.0"
 requires-python = ">=3.14"
+
 dependencies = [
     "discord.py>=2.7.1",
+    "python-dotenv",
+    "sqlalchemy",
+    "aiosqlite",
+    "alembic",
 ]
+
+[tool.setuptools.packages.find]
+include = ["bot*", "database*", "services*"]
