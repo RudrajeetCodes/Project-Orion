@@ -4,6 +4,7 @@ from discord import app_commands
 from services.task_service import (
     complete_task,
     create_task,
+    delete_task,
     get_tasks,
 )
 
@@ -72,6 +73,29 @@ class TaskGroup(app_commands.Group):
 
         await interaction.response.send_message(
             f"✅ Completed task #{task.id}: **{task.title}**"
+        )
+
+    @app_commands.command(
+        name="delete",
+        description="Delete a task",
+    )
+    @app_commands.describe(task_id="The ID of the task to delete")
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        task_id: int,
+    ):
+        async with SessionLocal() as session:
+            task = await delete_task(session, task_id)
+
+        if task is None:
+            await interaction.response.send_message(
+                f"❌ Task #{task_id} was not found."
+            )
+            return
+
+        await interaction.response.send_message(
+            f"🗑️ Deleted task #{task.id}: **{task.title}**"
         )
 
 
