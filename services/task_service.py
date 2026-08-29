@@ -47,6 +47,24 @@ async def complete_task(
     return task
 
 
+async def get_tasks_due_today(
+    session: AsyncSession,
+    start: datetime,
+    end: datetime,
+) -> list[Task]:
+    result = await session.execute(
+        select(Task)
+        .where(
+            Task.completed.is_(False),
+            Task.due_at >= start,
+            Task.due_at < end,
+        )
+        .order_by(Task.due_at)
+    )
+
+    return list(result.scalars().all())
+
+
 async def delete_task(
     session: AsyncSession,
     task_id: int,

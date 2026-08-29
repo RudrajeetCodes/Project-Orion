@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
 
 import discord
 from database.session import SessionLocal
@@ -9,6 +9,7 @@ from services.task_service import (
     delete_task,
     edit_task,
     get_tasks,
+    get_tasks_due_today,
 )
 
 
@@ -86,6 +87,36 @@ class TaskGroup(app_commands.Group):
                 due = task.due_at.strftime("%b %d at %I:%M %p")
             else:
                 due = "No due date"
+
+            lines.append(f"{task.id}. ⬜ **{task.title}**\n   {priority} · {due}")
+
+        await interaction.response.send_message("\n".join(lines))
+
+    @app_commands.command(
+        name="today",
+        description="Show tasks due today",
+    )
+    async def today(self, interaction: discord.Interaction):
+        now = datetime.now()
+        start = datetime.combine(now.date(), time.min)
+        end = start + timedelta(days=1)
+
+        async with SessionLocal() as session:
+            tasks = await get_tasks_due_today(
+                session,
+                start,
+                end,
+            )
+
+        if not tasks:
+            await interaction.response.send_message("🎉 You have no tasks due today!")
+            return
+
+        lines = ["📅 **Tasks Due Today**", ""]
+
+        for task in tasks:
+            priority = task.priority.capitalize()
+            due = task.due_at.strftime("%I:%M %p")
 
             lines.append(f"{task.id}. ⬜ **{task.title}**\n   {priority} · {due}")
 
