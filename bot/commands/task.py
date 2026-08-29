@@ -5,6 +5,7 @@ from services.task_service import (
     complete_task,
     create_task,
     delete_task,
+    edit_task,
     get_tasks,
 )
 
@@ -96,6 +97,33 @@ class TaskGroup(app_commands.Group):
 
         await interaction.response.send_message(
             f"🗑️ Deleted task #{task.id}: **{task.title}**"
+        )
+
+    @app_commands.command(
+        name="edit",
+        description="Edit a task's title",
+    )
+    @app_commands.describe(
+        task_id="The ID of the task to edit",
+        title="The new task title",
+    )
+    async def edit(
+        self,
+        interaction: discord.Interaction,
+        task_id: int,
+        title: str,
+    ):
+        async with SessionLocal() as session:
+            task = await edit_task(session, task_id, title)
+
+        if task is None:
+            await interaction.response.send_message(
+                f"❌ Task #{task_id} was not found."
+            )
+            return
+
+        await interaction.response.send_message(
+            f"✏️ Updated task #{task.id}: **{task.title}**"
         )
 
 

@@ -52,3 +52,21 @@ async def delete_task(
     await session.commit()
 
     return task
+
+
+async def edit_task(
+    session: AsyncSession,
+    task_id: int,
+    new_title: str,
+) -> Task | None:
+    task = await session.get(Task, task_id)
+
+    if task is None:
+        return None
+
+    task.title = new_title
+
+    await session.commit()
+    await session.refresh(task)
+
+    return task
