@@ -1,4 +1,5 @@
 from database.models.task import Task
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -9,6 +10,29 @@ async def create_task(
     task = Task(title=title)
 
     session.add(task)
+    await session.commit()
+    await session.refresh(task)
+
+    return task
+
+
+async def get_tasks(session: AsyncSession) -> list[Task]:
+    result = await session.execute(select(Task).where(Task.completed.is_(False)))
+
+    return list(result.scalars().all())
+
+
+async def complete_task(
+    session: AsyncSession,
+    task_id: int,
+) -> Task | None:
+    task = await session.get(Task, task_id)
+
+    if task is None:
+        return None
+
+    task.completed = True
+
     await session.commit()
     await session.refresh(task)
 

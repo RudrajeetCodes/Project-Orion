@@ -1,7 +1,11 @@
 import discord
 from database.session import SessionLocal
 from discord import app_commands
-from services.task_service import create_task
+from services.task_service import (
+    complete_task,
+    create_task,
+    get_tasks,
+)
 
 
 class TaskGroup(app_commands.Group):
@@ -26,6 +30,48 @@ class TaskGroup(app_commands.Group):
 
         await interaction.response.send_message(
             f"✅ Task #{task.id} created: **{task.title}**"
+        )
+
+    @app_commands.command(
+        name="list",
+        description="List your incomplete tasks",
+    )
+    async def list_tasks(self, interaction: discord.Interaction):
+        async with SessionLocal() as session:
+            tasks = await get_tasks(session)
+
+        if not tasks:
+            await interaction.response.send_message("🎉 You have no incomplete tasks!")
+            return
+
+        lines = ["📋 **Your Tasks**", ""]
+
+        for task in tasks:
+            lines.append(f"{task.id}. ⬜ {task.title}")
+
+        await interaction.response.send_message("\n".join(lines))
+
+    @app_commands.command(
+        name="complete",
+        description="Mark a task as completed",
+    )
+    @app_commands.describe(task_id="The ID of the task to complete")
+    async def complete(
+        self,
+        interaction: discord.Interaction,
+        task_id: int,
+    ):
+        async with SessionLocal() as session:
+            task = await complete_task(session, task_id)
+
+        if task is None:
+            await interaction.response.send_message(
+                f"❌ Task #{task_id} was not found."
+            )
+            return
+
+        await interaction.response.send_message(
+            f"✅ Completed task #{task.id}: **{task.title}**"
         )
 
 
