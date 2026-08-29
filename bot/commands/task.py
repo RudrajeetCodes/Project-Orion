@@ -205,25 +205,54 @@ class TaskGroup(app_commands.Group):
     @app_commands.describe(
         task_id="The ID of the task to edit",
         title="The new task title",
+        priority="The new task priority",
+        due="The new due date: YYYY-MM-DD HH:MM",
+    )
+    @app_commands.choices(
+        priority=[
+            app_commands.Choice(name="Low", value="low"),
+            app_commands.Choice(name="Normal", value="normal"),
+            app_commands.Choice(name="High", value="high"),
+        ]
     )
     async def edit(
         self,
         interaction: discord.Interaction,
         task_id: int,
         title: str,
+        priority: app_commands.Choice[str] | None = None,
+        due: str | None = None,
     ):
+
+        due_at = None
+
+        if due:
+            try:
+                due_at = datetime.strptime(due, "%Y-%m-%d %H:%M")
+            except ValueError:
+                await interaction.response.send_message(
+                    "❌ Invalid date format. Use `YYYY-MM-DD HH:MM`."
+                )
+                return
+
         async with SessionLocal() as session:
-            task = await edit_task(session, task_id, title)
-
-        if task is None:
-            await interaction.response.send_message(
-                f"❌ Task #{task_id} was not found."
+            task = await edit_task(
+                session,
+                task_id,
+                title,
+                priority.value if priority else None,
+                due_at,
             )
-            return
 
-        await interaction.response.send_message(
-            f"✏️ Updated task #{task.id}: **{task.title}**"
-        )
+            if task is None:
+                await interaction.response.send_message(
+                    f"❌ Task #{task_id} was not found."
+                )
+                return
+
+            await interaction.response.send_message(
+                f"✏️ Updated task #{task.id}: **{task.title}**"
+            )
 
 
 task_group = TaskGroup()

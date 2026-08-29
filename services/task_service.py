@@ -100,6 +100,8 @@ async def edit_task(
     session: AsyncSession,
     task_id: int,
     new_title: str,
+    priority: str | None = None,
+    due_at: datetime | None = None,
 ) -> Task | None:
     task = await session.get(Task, task_id)
 
@@ -107,6 +109,12 @@ async def edit_task(
         return None
 
     task.title = new_title
+
+    if priority is not None:
+        task.priority = priority
+
+    if due_at is not None:
+        task.due_at = due_at
 
     await session.commit()
     await session.refresh(task)
