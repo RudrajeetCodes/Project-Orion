@@ -65,6 +65,22 @@ async def get_tasks_due_today(
     return list(result.scalars().all())
 
 
+async def get_overdue_tasks(
+    session: AsyncSession,
+    now: datetime,
+) -> list[Task]:
+    result = await session.execute(
+        select(Task)
+        .where(
+            Task.completed.is_(False),
+            Task.due_at < now,
+        )
+        .order_by(Task.due_at)
+    )
+
+    return list(result.scalars().all())
+
+
 async def delete_task(
     session: AsyncSession,
     task_id: int,

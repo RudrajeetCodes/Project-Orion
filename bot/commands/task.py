@@ -8,6 +8,7 @@ from services.task_service import (
     create_task,
     delete_task,
     edit_task,
+    get_overdue_tasks,
     get_tasks,
     get_tasks_due_today,
 )
@@ -91,6 +92,35 @@ class TaskGroup(app_commands.Group):
             lines.append(f"{task.id}. ⬜ **{task.title}**\n   {priority} · {due}")
 
         await interaction.response.send_message("\n".join(lines))
+
+    @app_commands.command(
+        name="overdue",
+        description="Show overdue tasks",
+    )
+    async def overdue(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+        now = datetime.now()
+
+        async with SessionLocal() as session:
+            tasks = await get_overdue_tasks(
+                session,
+                now,
+            )
+
+        if not tasks:
+            await interaction.followup.send("🎉 You have no overdue tasks!")
+            return
+
+        lines = ["🚨 **Overdue Tasks**", ""]
+
+        for task in tasks:
+            priority = task.priority.capitalize()
+            due = task.due_at.strftime("%b %d at %I:%M %p")
+
+            lines.append(f"{task.id}. 🔴 **{task.title}**\n   {priority} · Due {due}")
+
+        await interaction.followup.send("\n".join(lines))
 
     @app_commands.command(
         name="today",
