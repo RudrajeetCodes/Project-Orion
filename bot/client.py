@@ -1,8 +1,9 @@
 import discord
-from config import guild_id
 from discord import app_commands
 
+from bot.commands.reminder import reminder_group
 from bot.commands.task import task_group
+from config import guild_id
 
 
 class OrionClient(discord.Client):
@@ -26,6 +27,7 @@ class OrionClient(discord.Client):
 
         # Add /task only to our development server.
         self.tree.add_command(task_group, guild=guild)
+        self.tree.add_command(reminder_group, guild=guild)
 
         # Sync guild commands.
         await self.tree.sync(guild=guild)
