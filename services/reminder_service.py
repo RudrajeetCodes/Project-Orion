@@ -44,3 +44,22 @@ async def cancel_reminder(
     await session.commit()
 
     return reminder
+
+async def edit_reminder(
+    session: AsyncSession,
+    reminder_id: int,
+    message: str,
+    remind_at: datetime,
+) -> Reminder | None:
+    reminder = await session.get(Reminder, reminder_id)
+
+    if reminder is None:
+        return None
+
+    reminder.message = message
+    reminder.remind_at = remind_at
+
+    await session.commit()
+    await session.refresh(reminder)
+
+    return reminder

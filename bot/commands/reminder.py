@@ -7,6 +7,7 @@ from database.session import SessionLocal
 from services.reminder_service import (
     cancel_reminder,
     create_reminder,
+    edit_reminder,
     get_reminders,
 )
 
@@ -103,6 +104,53 @@ class ReminderGroup(app_commands.Group):
 
         await interaction.response.send_message(
             f"🗑️ Cancelled reminder #{reminder.id}: **{reminder.message}**"
+        )
+
+    @app_commands.command(
+        name="edit",
+        description="Edit a reminder",
+    )
+    @app_commands.describe(
+        reminder_id="The ID of the reminder to edit",
+        message="The new reminder message",
+        remind_at="The new reminder time: YYYY-MM-DD HH:MM",
+    )
+    async def edit(
+        self,
+        interaction: discord.Interaction,
+        reminder_id: int,
+        message: str,
+        remind_at: str,
+    ):
+        try:
+            remind_at_dt = datetime.strptime(
+                remind_at,
+                "%Y-%m-%d %H:%M",
+            )
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Invalid date format. Use `YYYY-MM-DD HH:MM`."
+            )
+            return
+
+        async with SessionLocal() as session:
+            reminder = await edit_reminder(
+                session,
+                reminder_id,
+                message,
+                remind_at_dt,
+            )
+
+        if reminder is None:
+            await interaction.response.send_message(
+                f"❌ Reminder #{reminder_id} was not found."
+            )
+            return
+
+        await interaction.response.send_message(
+            f"✏️ Updated reminder #{reminder.id}: "
+            f"**{reminder.message}** at "
+            f"{reminder.remind_at.strftime('%b %d at %I:%M %p')}"
         )
 
 
