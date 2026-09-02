@@ -4,7 +4,11 @@ import discord
 from discord import app_commands
 
 from database.session import SessionLocal
-from services.reminder_service import create_reminder
+from services.reminder_service import (
+    cancel_reminder,
+    create_reminder,
+    get_reminders,
+)
 
 
 class ReminderGroup(app_commands.Group):
@@ -50,6 +54,55 @@ class ReminderGroup(app_commands.Group):
             f"⏰ Reminder #{reminder.id} created: "
             f"**{reminder.message}** at "
             f"{reminder.remind_at.strftime('%b %d at %I:%M %p')}"
+        )
+
+    @app_commands.command(
+        name="list",
+        description="List your reminders",
+    )
+    async def list_reminders(self, interaction: discord.Interaction):
+        async with SessionLocal() as session:
+            reminders = await get_reminders(session)
+
+        if not reminders:
+            await interaction.response.send_message("⏰ You have no reminders.")
+            return
+
+        lines = ["⏰ **Your Reminders**", ""]
+
+        for reminder in reminders:
+            remind_at = reminder.remind_at.strftime("%b %d at %I:%M %p")
+
+            lines.append(f"{reminder.id}. ⏰ **{reminder.message}**\n   {remind_at}")
+
+        await interaction.response.send_message("\n".join(lines))
+
+    @app_commands.command(
+        name="cancel",
+        description="Cancel a reminder",
+    )
+    @app_commands.describe(
+        reminder_id="The ID of the reminder to cancel",
+    )
+    async def cancel(
+        self,
+        interaction: discord.Interaction,
+        reminder_id: int,
+    ):
+        async with SessionLocal() as session:
+            reminder = await cancel_reminder(
+                session,
+                reminder_id,
+            )
+
+        if reminder is None:
+            await interaction.response.send_message(
+                f"❌ Reminder #{reminder_id} was not found."
+            )
+            return
+
+        await interaction.response.send_message(
+            f"🗑️ Cancelled reminder #{reminder.id}: **{reminder.message}**"
         )
 
 
