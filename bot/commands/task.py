@@ -1,9 +1,11 @@
 from datetime import datetime, time, timedelta
 
 import discord
-from database.session import SessionLocal
 from discord import app_commands
+
+from database.session import SessionLocal
 from services.task_service import (
+    clear_completed_tasks,
     complete_task,
     create_task,
     delete_task,
@@ -76,7 +78,7 @@ class TaskGroup(app_commands.Group):
             tasks = await get_tasks(session)
 
         if not tasks:
-            await interaction.response.send_message("🎉 You have no incomplete tasks!")
+            await interaction.response.send_message("🎉 You have no tasks!")
             return
 
         lines = ["📋 **Your Tasks**", ""]
@@ -89,7 +91,9 @@ class TaskGroup(app_commands.Group):
             else:
                 due = "No due date"
 
-            lines.append(f"{task.id}. ⬜ **{task.title}**\n   {priority} · {due}")
+            status = "✅" if task.completed else "⬜"
+
+            lines.append(f"{task.id}. {status} **{task.title}**\n   {priority} · {due}")
 
         await interaction.response.send_message("\n".join(lines))
 
@@ -253,6 +257,24 @@ class TaskGroup(app_commands.Group):
             await interaction.response.send_message(
                 f"✏️ Updated task #{task.id}: **{task.title}**"
             )
+
+    @app_commands.command(
+        name="clear",
+        description="Delete all completed tasks",
+    )
+    async def clear(self, interaction: discord.Interaction):
+        print("CLEAR COMMAND RECEIVED", interaction.id)
+
+        await interaction.response.defer()
+
+        async with SessionLocal() as session:
+            count = await clear_completed_tasks(session)
+
+        if count == 0:
+            await interaction.followup.send("🧹 You have no completed tasks to clear.")
+            return
+
+        await interaction.followup.send(f"🧹 Cleared **{count}** completed task(s).")
 
 
 task_group = TaskGroup()

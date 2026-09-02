@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from database.models.task import Task
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from database.models.task import Task
 
 
 async def create_task(
@@ -25,7 +26,7 @@ async def create_task(
 
 
 async def get_tasks(session: AsyncSession) -> list[Task]:
-    result = await session.execute(select(Task).where(Task.completed.is_(False)))
+    result = await session.execute(select(Task).order_by(Task.id))
 
     return list(result.scalars().all())
 
@@ -120,3 +121,24 @@ async def edit_task(
     await session.refresh(task)
 
     return task
+
+
+async def get_completed_tasks(
+    session: AsyncSession,
+) -> list[Task]:
+    result = await session.execute(select(Task).where(Task.completed.is_(True)))
+
+    return list(result.scalars().all())
+
+
+async def clear_completed_tasks(
+    session: AsyncSession,
+) -> int:
+    tasks = await get_completed_tasks(session)
+
+    for task in tasks:
+        await session.delete(task)
+
+    await session.commit()
+
+    return len(tasks)
