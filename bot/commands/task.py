@@ -11,6 +11,7 @@ from services.task_service import (
     delete_task,
     edit_task,
     get_overdue_tasks,
+    get_task_stats,
     get_tasks,
     get_tasks_due_today,
 )
@@ -275,6 +276,21 @@ class TaskGroup(app_commands.Group):
             return
 
         await interaction.followup.send(f"🧹 Cleared **{count}** completed task(s).")
+
+    @app_commands.command(
+        name="stats",
+        description="Show your task statistics",
+    )
+    async def stats(self, interaction: discord.Interaction):
+        async with SessionLocal() as session:
+            stats = await get_task_stats(session)
+
+        await interaction.response.send_message(
+            f"📊 **Task Stats**\n\n"
+            f"Total: **{stats['total']}**\n"
+            f"Completed: **{stats['completed']}**\n"
+            f"Incomplete: **{stats['incomplete']}**"
+        )
 
 
 task_group = TaskGroup()

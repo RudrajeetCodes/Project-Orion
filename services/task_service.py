@@ -142,3 +142,17 @@ async def clear_completed_tasks(
     await session.commit()
 
     return len(tasks)
+
+
+async def get_task_stats(session: AsyncSession) -> dict:
+    tasks = await get_tasks(session)
+
+    total = len(tasks)
+    completed = sum(task.completed for task in tasks)
+    incomplete = total - completed
+
+    return {
+        "total": total,
+        "completed": completed,
+        "incomplete": incomplete,
+    }
