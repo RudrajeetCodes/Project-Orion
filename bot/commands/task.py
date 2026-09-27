@@ -2,7 +2,7 @@ from datetime import datetime, time, timedelta
 
 import discord
 from discord import app_commands
-
+from services.status_service import build_status
 from database.session import SessionLocal
 from services.task_service import (
     clear_completed_tasks,
@@ -283,14 +283,9 @@ class TaskGroup(app_commands.Group):
     )
     async def stats(self, interaction: discord.Interaction):
         async with SessionLocal() as session:
-            stats = await get_task_stats(session)
+            status = await build_status(session)
 
-        await interaction.response.send_message(
-            f"📊 **Task Stats**\n\n"
-            f"Total: **{stats['total']}**\n"
-            f"Completed: **{stats['completed']}**\n"
-            f"Incomplete: **{stats['incomplete']}**"
-        )
+        await interaction.response.send_message(status)
 
 
 task_group = TaskGroup()
