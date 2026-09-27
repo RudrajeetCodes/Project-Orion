@@ -33,13 +33,14 @@ class ReminderGroup(app_commands.Group):
         message: str,
         remind_at: str,
     ):
+        await interaction.response.defer()
         try:
             remind_at_dt = datetime.strptime(
                 remind_at,
                 "%Y-%m-%d %H:%M",
             )
         except ValueError:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ Invalid date format. Use `YYYY-MM-DD HH:MM`."
             )
             return
@@ -51,7 +52,7 @@ class ReminderGroup(app_commands.Group):
                 remind_at_dt,
             )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"⏰ Reminder #{reminder.id} created: "
             f"**{reminder.message}** at "
             f"{reminder.remind_at.strftime('%b %d at %I:%M %p')}"

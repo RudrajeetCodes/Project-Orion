@@ -45,6 +45,7 @@ async def cancel_reminder(
 
     return reminder
 
+
 async def edit_reminder(
     session: AsyncSession,
     reminder_id: int,
@@ -59,6 +60,38 @@ async def edit_reminder(
     reminder.message = message
     reminder.remind_at = remind_at
 
+    await session.commit()
+    await session.refresh(reminder)
+
+    return reminder
+
+
+async def get_due_reminders(
+    session: AsyncSession,
+    now: datetime,
+) -> list[Reminder]:
+    result = await session.execute(
+        select(Reminder)
+        .where(
+            Reminder.remind_at <= now,
+            Reminder.sent.is_(False),
+        )
+        .order_by(Reminder.remind_at)
+    )
+
+    return list(result.scalars().all())
+
+
+async def mark_reminder_sent(
+    session: AsyncSession,
+    reminder_id: int,
+) -> Reminder | None:
+    reminder = await session.get(Reminder, reminder_id)
+
+    if reminder is None:
+        return None
+
+    reminder.sent = True
     await session.commit()
     await session.refresh(reminder)
 

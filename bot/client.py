@@ -1,9 +1,12 @@
+import asyncio
+
 import discord
 from discord import app_commands
 
 from bot.commands.reminder import reminder_group
 from bot.commands.task import task_group
 from config import guild_id
+from workers.reminder_worker import reminder_worker
 
 
 class OrionClient(discord.Client):
@@ -19,18 +22,14 @@ class OrionClient(discord.Client):
     async def setup_hook(self):
         guild = discord.Object(id=int(guild_id))
 
-        # Remove any old global /task command.
         self.tree.remove_command("task")
-
-        # Sync global commands.
         await self.tree.sync()
 
-        # Add /task only to our development server.
         self.tree.add_command(task_group, guild=guild)
         self.tree.add_command(reminder_group, guild=guild)
-
-        # Sync guild commands.
         await self.tree.sync(guild=guild)
+
+        asyncio.create_task(reminder_worker(self))
 
         print("Slash commands synced")
 
