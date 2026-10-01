@@ -1,7 +1,6 @@
-from config import status_channel_id
-
-
-STATUS_MARKER = "ORION_STATUS"
+from config import status_channel_id, status_message_id
+from database.session import SessionLocal
+from services.status_service import build_status
 
 
 async def get_status_channel(client):
@@ -16,8 +15,16 @@ async def get_status_channel(client):
 async def get_or_create_status_message(client):
     channel = await get_status_channel(client)
 
-    async for message in channel.history(limit=50):
-        if message.author == client.user and STATUS_MARKER in message.content:
-            return message
+    if status_message_id:
+        return await channel.fetch_message(int(status_message_id))
 
-    return await channel.send(STATUS_MARKER)
+    return await channel.send("ORION_STATUS")
+
+
+async def update_status(client):
+    message = await get_or_create_status_message(client)
+
+    async with SessionLocal() as session:
+        status = await build_status(session)
+
+    await message.edit(content=status)

@@ -2,8 +2,10 @@ from datetime import datetime, time, timedelta
 
 import discord
 from discord import app_commands
-from services.status_service import build_status
+
 from database.session import SessionLocal
+from services.status_message_service import update_status
+from services.status_service import build_status
 from services.task_service import (
     clear_completed_tasks,
     complete_task,
@@ -65,6 +67,8 @@ class TaskGroup(app_commands.Group):
                 priority.value,
                 due_at,
             )
+
+        await update_status(interaction.client)
 
         await interaction.response.send_message(
             f"✅ Task #{task.id} created: **{task.title}**"
@@ -175,6 +179,8 @@ class TaskGroup(app_commands.Group):
                 f"❌ Task #{task_id} was not found."
             )
             return
+
+        await update_status(interaction.client)
 
         await interaction.response.send_message(
             f"✅ Completed task #{task.id}: **{task.title}**"
@@ -289,4 +295,3 @@ class TaskGroup(app_commands.Group):
 
 
 task_group = TaskGroup()
-

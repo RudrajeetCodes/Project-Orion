@@ -6,8 +6,11 @@ from discord import app_commands
 from bot.commands.reminder import reminder_group
 from bot.commands.task import task_group
 from config import guild_id
+from services.status_message_service import (
+    get_or_create_status_message,
+    update_status,
+)
 from workers.reminder_worker import reminder_worker
-from services.status_message_service import get_or_create_status_message
 
 
 class OrionClient(discord.Client):
@@ -29,7 +32,7 @@ class OrionClient(discord.Client):
         self.tree.add_command(task_group, guild=guild)
         self.tree.add_command(reminder_group, guild=guild)
         await self.tree.sync(guild=guild)
-        await get_or_create_status_message(self)
+        await update_status(self)
 
         asyncio.create_task(reminder_worker(self))
 
